@@ -1,0 +1,559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>WEATHERBLAST ⚡</title>
+
+  <!-- ============================================================
+       FONTS — Bebas Neue for headlines, DM Sans for body text
+       ============================================================ -->
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@400;600;700&display=swap" rel="stylesheet" />
+
+  <!-- ============================================================
+       STYLESHEET — All styles live here at the top
+       ============================================================ -->
+  <style>
+    /* ── CSS Variables ─────────────────────────────────────────── */
+    :root {
+      --bg:        #0a0a0f;
+      --surface:   #13131c;
+      --border:    #2a2a3d;
+      --neon-yel:  #f5e642;
+      --neon-grn:  #42f5a1;
+      --neon-blu:  #42b8f5;
+      --neon-pnk:  #f542c5;
+      --neon-org:  #f5a442;
+      --text:      #e8e8f0;
+      --muted:     #6b6b88;
+      --radius:    16px;
+    }
+
+    /* ── Reset & Base ───────────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated background dots ───────────────────────────────── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, #ffffff08 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Layout wrapper ─────────────────────────────────────────── */
+    .app {
+      position: relative;
+      z-index: 1;
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 40px 20px 80px;
+    }
+
+    /* ── Header ─────────────────────────────────────────────────── */
+    header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(56px, 12vw, 96px);
+      letter-spacing: 4px;
+      line-height: 1;
+      /* Bright yellow with a neon glow */
+      color: var(--neon-yel);
+      text-shadow: 0 0 20px #f5e64288, 0 0 60px #f5e64244;
+    }
+
+    .tagline {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* ── Search bar ─────────────────────────────────────────────── */
+    .search-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 36px;
+    }
+
+    .search-input {
+      flex: 1;
+      padding: 16px 20px;
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 16px;
+      font-weight: 600;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    .search-input::placeholder { color: var(--muted); }
+    .search-input:focus { border-color: var(--neon-yel); }
+
+    .search-btn {
+      padding: 16px 28px;
+      background: var(--neon-yel);
+      color: #0a0a0f;
+      border: none;
+      border-radius: var(--radius);
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 20px;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: transform 0.15s, box-shadow 0.15s;
+    }
+    .search-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px #f5e64255;
+    }
+    .search-btn:active { transform: translateY(0); }
+
+    /* ── Status / error messages ────────────────────────────────── */
+    .status {
+      text-align: center;
+      padding: 16px;
+      border-radius: var(--radius);
+      font-weight: 600;
+      margin-bottom: 24px;
+      display: none; /* shown via JS */
+    }
+    .status.error  { background: #2d0a14; color: #ff6b8a; border: 1px solid #ff6b8a44; display: block; }
+    .status.loading{ background: var(--surface); color: var(--neon-yel); border: 1px solid var(--border); display: block; }
+
+    /* ── Hero card (main temp display) ─────────────────────────── */
+    .hero-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: 24px;
+      padding: 36px 32px;
+      margin-bottom: 20px;
+      position: relative;
+      overflow: hidden;
+      animation: fadeUp 0.4s ease both;
+    }
+    /* Colour accent strip on top edge */
+    .hero-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--neon-yel), var(--neon-grn), var(--neon-blu));
+    }
+
+    .hero-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 16px;
+    }
+
+    .hero-location {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 38px;
+      letter-spacing: 2px;
+      color: var(--text);
+      line-height: 1;
+    }
+    .hero-country {
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .hero-time {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--muted);
+      text-align: right;
+    }
+
+    .hero-bottom {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      margin-top: 28px;
+      flex-wrap: wrap;
+    }
+
+    .hero-temp {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 100px;
+      line-height: 1;
+      color: var(--neon-yel);
+      text-shadow: 0 0 40px #f5e64255;
+    }
+
+    .hero-meta {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .hero-condition {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--text);
+    }
+    .hero-feels {
+      font-size: 14px;
+      color: var(--muted);
+    }
+
+    /* ── 4-stat row ─────────────────────────────────────────────── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .stat-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    /* Each card gets its own accent colour via a data attribute */
+    .stat-card[data-color="grn"] { border-top: 3px solid var(--neon-grn); }
+    .stat-card[data-color="blu"] { border-top: 3px solid var(--neon-blu); }
+    .stat-card[data-color="pnk"] { border-top: 3px solid var(--neon-pnk); }
+    .stat-card[data-color="org"] { border-top: 3px solid var(--neon-org); }
+
+    .stat-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+
+    .stat-value {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 36px;
+      letter-spacing: 1px;
+      line-height: 1;
+    }
+
+    .stat-card[data-color="grn"] .stat-value { color: var(--neon-grn); }
+    .stat-card[data-color="blu"] .stat-value { color: var(--neon-blu); }
+    .stat-card[data-color="pnk"] .stat-value { color: var(--neon-pnk); }
+    .stat-card[data-color="org"] .stat-value { color: var(--neon-org); }
+
+    .stat-unit {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ── Bottom row: UV + Visibility + Pressure ─────────────────── */
+    .detail-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 14px;
+      margin-bottom: 20px;
+    }
+
+    .detail-card {
+      background: var(--surface);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: fadeUp 0.4s ease both;
+    }
+
+    .detail-left .detail-label {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 4px;
+    }
+    .detail-left .detail-val {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 28px;
+      color: var(--text);
+      letter-spacing: 1px;
+    }
+    .detail-icon {
+      font-size: 32px;
+      opacity: 0.7;
+    }
+
+    /* ── Attribution footer ──────────────────────────────────────── */
+    footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 12px;
+      color: var(--muted);
+      letter-spacing: 1px;
+    }
+    footer a { color: var(--neon-yel); text-decoration: none; }
+
+    /* ── Hidden by default — shown when data loads ───────────────── */
+    .weather-results { display: none; }
+
+    /* ── Fade-up animation ───────────────────────────────────────── */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(18px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Responsive tweaks ───────────────────────────────────────── */
+    @media (max-width: 500px) {
+      .hero-temp { font-size: 70px; }
+      .hero-card { padding: 24px 18px; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ── Header ─────────────────────────────────────────────────── -->
+  <header>
+    <div class="logo">WEATHERBLAST ⚡</div>
+    <div class="tagline">Live conditions for any city on Earth</div>
+  </header>
+
+  <!-- ── Search ─────────────────────────────────────────────────── -->
+  <div class="search-row">
+    <input
+      class="search-input"
+      id="cityInput"
+      type="text"
+      placeholder="Enter a city — e.g. Tokyo, Lagos, Buenos Aires…"
+      autocomplete="off"
+    />
+    <button class="search-btn" id="searchBtn" onclick="fetchWeather()">GO</button>
+  </div>
+
+  <!-- ── Status / error banner ─────────────────────────────────── -->
+  <div class="status" id="statusMsg"></div>
+
+  <!-- ── Results (hidden until data loads) ────────────────────── -->
+  <div class="weather-results" id="weatherResults">
+
+    <!-- Hero card -->
+    <div class="hero-card">
+      <div class="hero-top">
+        <div>
+          <div class="hero-location" id="heroCity">—</div>
+          <div class="hero-country" id="heroCountry">—</div>
+        </div>
+        <div class="hero-time" id="heroTime">—</div>
+      </div>
+      <div class="hero-bottom">
+        <div class="hero-temp" id="heroTemp">—°</div>
+        <div class="hero-meta">
+          <div class="hero-condition" id="heroCondition">—</div>
+          <div class="hero-feels" id="heroFeels">Feels like —°</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 4 stat cards: humidity, wind, cloud, dew point -->
+    <div class="stat-grid">
+      <div class="stat-card" data-color="grn">
+        <div class="stat-label">Humidity</div>
+        <div class="stat-value" id="statHumidity">—</div>
+        <div class="stat-unit">percent</div>
+      </div>
+      <div class="stat-card" data-color="blu">
+        <div class="stat-label">Wind Speed</div>
+        <div class="stat-value" id="statWind">—</div>
+        <div class="stat-unit">km/h</div>
+      </div>
+      <div class="stat-card" data-color="pnk">
+        <div class="stat-label">Cloud Cover</div>
+        <div class="stat-value" id="statCloud">—</div>
+        <div class="stat-unit">percent</div>
+      </div>
+      <div class="stat-card" data-color="org">
+        <div class="stat-label">Dew Point</div>
+        <div class="stat-value" id="statDew">—</div>
+        <div class="stat-unit">celsius</div>
+      </div>
+    </div>
+
+    <!-- 3 detail cards: UV, Visibility, Pressure -->
+    <div class="detail-row">
+      <div class="detail-card">
+        <div class="detail-left">
+          <div class="detail-label">UV Index</div>
+          <div class="detail-val" id="detailUV">—</div>
+        </div>
+        <div class="detail-icon">☀️</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-left">
+          <div class="detail-label">Visibility</div>
+          <div class="detail-val" id="detailVis">— km</div>
+        </div>
+        <div class="detail-icon">👁️</div>
+      </div>
+      <div class="detail-card">
+        <div class="detail-left">
+          <div class="detail-label">Pressure</div>
+          <div class="detail-val" id="detailPres">— mb</div>
+        </div>
+        <div class="detail-icon">🌡️</div>
+      </div>
+    </div>
+
+  </div><!-- /.weather-results -->
+
+  <!-- ── Footer ────────────────────────────────────────────────── -->
+  <footer>
+    Powered by <a href="https://rapidapi.com/weatherapi/api/weatherapi-com" target="_blank">WeatherAPI via RapidAPI</a>
+  </footer>
+
+</div><!-- /.app -->
+
+
+<!-- ============================================================
+     JAVASCRIPT — API call + DOM updates
+     ============================================================ -->
+<script>
+
+  // ── ⚙️  CONFIGURATION — replace with your own RapidAPI key ──────
+  // Sign up at https://rapidapi.com and subscribe to "WeatherAPI.com"
+  // then paste your key below.
+  const RAPIDAPI_KEY  = 'YOUR_RAPIDAPI_KEY_HERE';
+  const RAPIDAPI_HOST = 'weatherapi-com.p.rapidapi.com';
+
+  // ── Helper: show/hide status banner ─────────────────────────────
+  function showStatus(msg, type) {
+    const el = document.getElementById('statusMsg');
+    el.textContent = msg;
+    el.className = 'status ' + type;
+  }
+  function clearStatus() {
+    const el = document.getElementById('statusMsg');
+    el.className = 'status';          // no type = display:none via CSS
+    el.textContent = '';
+  }
+
+  // ── Helper: show or hide the results panel ──────────────────────
+  function showResults(show) {
+    document.getElementById('weatherResults').style.display = show ? 'block' : 'none';
+  }
+
+  // ── Main fetch function — called on button click or Enter key ───
+  async function fetchWeather() {
+    const city = document.getElementById('cityInput').value.trim();
+
+    // Guard: require a city name
+    if (!city) {
+      showStatus('Please enter a city name first.', 'error');
+      return;
+    }
+
+    // Guard: remind user to add their API key
+    if (RAPIDAPI_KEY === '7914d7a3eamshdce1197333b3cefp19cdd1jsn5deb1a4dbfbf') {
+      showStatus('⚠️  Add your RapidAPI key to the RAPIDAPI_KEY variable in the <script> section.', 'error');
+      return;
+    }
+
+    showStatus('Fetching weather… ⚡', 'loading');
+    showResults(false);
+
+    // ── Build the API request ────────────────────────────────────
+    // WeatherAPI "current.json" endpoint — returns live conditions
+    const url = `https://${RAPIDAPI_HOST}/current.json?q=${encodeURIComponent(city)}`;
+
+    const options = {
+      method: 'GET',
+      headers: {
+        'x-rapidapi-key':  RAPIDAPI_KEY,
+        'x-rapidapi-host': RAPIDAPI_HOST
+      }
+    };
+
+    try {
+      const response = await fetch(url, options);
+
+      // Handle HTTP errors (bad city name → 400, bad key → 403, etc.)
+      if (!response.ok) {
+        const err = await response.json().catch(() => ({}));
+        const msg = err?.error?.message || `Error ${response.status}`;
+        showStatus(`❌ ${msg}`, 'error');
+        return;
+      }
+
+      const data = await response.json();
+
+      // ── Populate the UI with API data ──────────────────────────
+      populateWeather(data);
+      clearStatus();
+      showResults(true);
+
+    } catch (err) {
+      // Network failure, CORS issue, etc.
+      showStatus(`❌ Network error: ${err.message}`, 'error');
+    }
+  }
+
+  // ── Fill every element from the API response object ─────────────
+  function populateWeather(data) {
+    const loc = data.location;   // city, country, local time
+    const cur = data.current;    // all the weather readings
+
+    // Hero card
+    document.getElementById('heroCity').textContent      = loc.name;
+    document.getElementById('heroCountry').textContent   = `${loc.region ? loc.region + ', ' : ''}${loc.country}`;
+    document.getElementById('heroTime').textContent      = `Local time: ${loc.localtime}`;
+    document.getElementById('heroTemp').textContent      = `${Math.round(cur.temp_c)}°`;
+    document.getElementById('heroCondition').textContent = cur.condition.text;
+    document.getElementById('heroFeels').textContent     = `Feels like ${Math.round(cur.feelslike_c)}°C`;
+
+    // Stat cards
+    document.getElementById('statHumidity').textContent  = cur.humidity;
+    document.getElementById('statWind').textContent      = Math.round(cur.wind_kph);
+    document.getElementById('statCloud').textContent     = cur.cloud;
+    document.getElementById('statDew').textContent       = Math.round(cur.dewpoint_c ?? '--');
+
+    // Detail cards
+    document.getElementById('detailUV').textContent      = cur.uv;
+    document.getElementById('detailVis').textContent     = `${cur.vis_km} km`;
+    document.getElementById('detailPres').textContent    = `${cur.pressure_mb} mb`;
+  }
+
+  // ── Allow pressing Enter in the input to trigger search ─────────
+  document.getElementById('cityInput').addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') fetchWeather();
+  });
+
+</script>
+
+</body>
+</html>
